@@ -30,9 +30,9 @@ impl Centroid {
         }
     }
 
-    #[inline] // Tell compiler to inline frequently used functions
+    #[inline]
     pub fn mean(&self) -> f64 {
-        self.mean.into_inner() // into_inner is to take the value from a wrapper
+        self.mean.into_inner()
     }
 
     #[inline]
@@ -48,6 +48,12 @@ impl Centroid {
         self.mean = OrderedFloat::from((_mean * _weight + value) / self.weight());
 
         (self.mean(), self.weight())
+    }
+}
+
+impl Default for Centroid {
+    fn default() -> Self {
+        Centroid::new(0.0, 1.0)
     }
 }
 
@@ -88,7 +94,7 @@ mod tests {
         assert_eq!(c1.cmp(&c2), Ordering::Less);
         assert_eq!(c2.cmp(&c1), Ordering::Greater);
         let c3 = Centroid::new(5.0, 2.0);
-        assert_eq!(c1.cmp(&c3), Ordering::Equal); // Comparing based on mean
+        assert_eq!(c1.cmp(&c3), Ordering::Equal);
     }
 
     #[test]
