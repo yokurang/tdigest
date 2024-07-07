@@ -57,6 +57,113 @@ impl Default for Centroid {
     }
 }
 
+/// T-Digest to be operated on.
+#[derive(Debug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "use_serde", derive(Serialize, Deserialize))]
+pub struct TDigest {
+    centroids: Vec<Centroid>,
+    max_size: usize,
+    sum: OrderedFloat<f64>,
+    count: OrderedFloat<f64>,
+    max: OrderedFloat<f64>,
+    min: OrderedFloat<f64>,
+}
+
+impl TDigest {
+    pub fn new_with_size(max_size: usize) -> Self {
+        TDigest {
+            centroids: Vec::new(),
+            max_size,
+            sum: OrderedFloat::from(0.0),
+            count: OrderedFloat::from(0.0),
+            max: OrderedFloat::from(std::f64::NAN),
+            min: OrderedFloat::from(std::f64::NAN),
+        }
+    }
+
+    pub fn new(
+        centroids: Vec<Centroid>,
+        max_size: usize,
+        sum: f64,
+        count: f64,
+        max: f64,
+        min: f64,
+    ) -> Self {
+        if centroids.len() <= max_size {
+            TDigest {
+                centroids,
+                max_size,
+                sum: OrderedFloat::from(sum),
+                count: OrderedFloat::from(count),
+                max: OrderedFloat::from(max),
+                min: OrderedFloat::from(min),
+            }
+        } else {
+            let sz = centroids.len();
+            let digests: Vec<TDigest> = vec![
+                TDigest::new_with_size(100),
+                TDigest::new(centroids, sz, sum, count, max, min),
+            ];
+            Self::merge_digests(digests)
+        }
+    }
+
+    #[inline]
+    pub fn mean(&self) -> f64 {
+        let count_: f64 = self.count.into_inner();
+        let sum_: f64 = self.sum.into_inner();
+
+        if count_ > 0.0 {
+            sum_ / count_
+        } else {
+            std::f64::NAN
+        }
+    }
+
+    #[inline]
+    pub fn sum(&self) -> f64 {
+        self.sum.into_inner()
+    }
+
+    #[inline]
+    pub fn count(&self) -> f64 {
+        self.count.into_inner()
+    }
+
+    #[inline]
+    pub fn max(&self) -> f64 {
+        self.max.into_inner()
+    }
+
+    #[inline]
+    pub fn min(&self) -> f64 {
+        self.min.into_inner()
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.centroids.is_empty()
+    }
+
+    #[inline]
+    pub fn max_size(&self) -> usize {
+        self.max_size
+    }
+}
+
+impl Default for TDigest {
+    fn default() -> Self {
+        TDigest {
+            centroids: Vec::new(),
+            max_size: 100,
+            sum: OrderedFloat::from(0.0),
+            count: OrderedFloat::from(0.0),
+            max: OrderedFloat::from(std::f64::NAN),
+            min: OrderedFloat::from(std::f64::NAN),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
